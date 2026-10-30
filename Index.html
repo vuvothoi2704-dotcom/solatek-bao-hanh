@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Bảo Hành Điện Tử - CÔNG TY TNHH SOLATEK VIỆT NAM</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- HTML5 QRCode Scanner -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <!-- QRCode Generator Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif; 
+        }
+        .printable-qr {
+            page-break-inside: avoid;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col justify-between antialiased">
+
+    <!-- HEADER CÔNG TY -->
+    <header class="bg-blue-900 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-3.5 flex flex-col sm:flex-row justify-between items-center gap-3">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="navigateTo('client')">
+                <div class="bg-white p-2 rounded-xl text-blue-900 shadow-md">
+                    <i data-lucide="shield-check" class="w-7 h-7"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg tracking-wide uppercase leading-tight">CÔNG TY TNHH SOLATEK VIỆT NAM</h1>
+                    <p class="text-xs text-blue-200">Hệ Thống Kích Hoạt & Tra Cứu Bảo Hành Điện Tử</p>
+                </div>
+            </div>
+            
+            <div class="text-right text-xs text-blue-100 hidden md:block">
+                <p class="flex items-center justify-end gap-1"><i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Thôn Bến Hải, Xã Đồng Việt, Bắc Ninh</p>
+                <p class="flex items-center justify-end gap-1 mt-0.5"><i data-lucide="phone-call" class="w-3.5 h-3.5"></i> Hotline: <span class="font-bold text-yellow-300">0332 973 704</span></p>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTAINER CHÍNH -->
+    <main class="max-w-5xl w-full mx-auto px-4 py-6 sm:py-10 flex-grow">
+        
+        <!-- ================================================= -->
+        <!-- 1. KHU VỰC KHÁCH HÀNG (PUBLIC VIEW)               -->
+        <!-- ================================================= -->
+        <div id="view-client" class="space-y-6">
+            
+            <!-- Tab chuyển đổi cho Khách hàng -->
+            <div class="flex justify-center max-w-md mx-auto bg-slate-200/70 p-1 rounded-xl">
+                <button id="tab-activate-btn" onclick="switchClientTab('activate')" class="w-1/2 py-2.5 px-4 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 bg-white text-blue-900 shadow">
+                    Kích Hoạt Bảo Hành
+                </button>
+                <button id="tab-lookup-btn" onclick="switchClientTab('lookup')" class="w-1/2 py-2.5 px-4 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-blue-900 transition-all duration-200">
+                    Tra Cứu Bảo Hành
+                </button>
+            </div>
+
+            <!-- Tab 1: Kích hoạt bảo hành -->
+            <div id="client-activate-tab" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 max-w-xl mx-auto">
+                <div class="text-center mb-6">
+                    <span class="bg-blue-50 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Chính Hãng Solatek</span>
+                    <h2 class="text-xl sm:text-2xl font-bold text-slate-800 mt-2">Kích Hoạt Bảo Hành Điện Tử</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">Đăng ký thông tin trực tuyến để nhận chính sách bảo hành 24 tháng.</p>
+                </div>
+
+                <form id="form-activate" onsubmit="processClientActivation(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Mã Serial Sản Phẩm *</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="act-serial" required placeholder="Nhập hoặc quét mã Serial..." class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none uppercase font-mono text-sm">
+                            <button type="button" onclick="startCameraScanner('act-serial')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2.5 rounded-lg border border-slate-300 flex items-center gap-1.5 text-xs font-semibold shrink-0 transition">
+                                <i data-lucide="camera" class="w-4 h-4 text-blue-600"></i> Quét QR
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Họ Và Tên Khách Hàng *</label>
+                        <input type="text" id="act-name" required placeholder="Ví dụ: Nguyễn Văn A" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Số Điện Thoại Liên Hệ *</label>
+                        <input type="tel" id="act-phone" required pattern="[0-9]{10,11}" placeholder="Ví dụ: 0912345678" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Địa Chỉ / Tỉnh Thành *</label>
+                        <input type="text" id="act-address" required placeholder="Ví dụ: Thôn Bến Hải, Xã Đồng Việt, Bắc Ninh" class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none text-sm">
+                    </div>
+
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg shadow-md transition duration-200 text-sm flex items-center justify-center gap-2">
+                        <i data-lucide="shield-check" class="w-4 h-4"></i> Xác Nhận Kích Hoạt Bảo Hành
+                    </button>
+                </form>
+
+                <div id="act-alert" class="mt-4 p-4 rounded-xl text-xs sm:text-sm hidden border"></div>
+            </div>
+
+            <!-- Tab 2: Tra cứu bảo hành -->
+            <div id="client-lookup-tab" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8 max-w-xl mx-auto hidden">
+                <div class="text-center mb-6">
+                    <h2 class="text-xl sm:text-2xl font-bold text-slate-800">Tra Cứu Thời Hạn Bảo Hành</h2>
+                    <p class="text-xs sm:text-sm text-slate-500 mt-1">Kiểm tra thông tin chi tiết và ngày hết hạn bảo hành của thiết bị.</p>
+                </div>
+
+                <div class="flex gap-2 mb-6">
+                    <input type="text" id="lookup-input" placeholder="Nhập mã Serial cần tra cứu..." class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:outline-none uppercase font-mono text-sm">
+                    <button onclick="processClientLookup()" class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-semibold text-sm transition shrink-0">Tra Cứu</button>
+                </div>
+
+                <div id="lookup-result" class="hidden border rounded-xl p-5 bg-slate-50 space-y-3"></div>
+            </div>
+
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- 2. MÀN HÌNH ĐĂNG NHẬP ADMIN (ADMIN LOGIN VIEW)     -->
+        <!-- ================================================= -->
+        <div id="view-admin-login" class="max-w-md mx-auto hidden">
+            <div class="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 sm:p-8">
+                <div class="text-center mb-6">
+                    <div class="bg-slate-900 text-white w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-md">
+                        <i data-lucide="lock" class="w-7 h-7"></i>
+                    </div>
+                    <h2 class="text-xl font-bold text-slate-900">Đăng Nhập Quản Trị Hệ Thống</h2>
+                    <p class="text-xs text-slate-500 mt-1">Chỉ dành cho cán bộ quản lý Solatek Việt Nam</p>
+                </div>
+
+                <form onsubmit="processAdminLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Tài Khoản Administrator</label>
+                        <input type="text" id="admin-user" required placeholder="Nhập tên tài khoản..." class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-800 focus:outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase text-slate-600 mb-1">Mật Khẩu Truy Cập</label>
+                        <input type="password" id="admin-pass" required placeholder="Nhập mật khẩu..." class="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-800 focus:outline-none text-sm">
+                    </div>
+
+                    <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3 rounded-lg shadow-md transition text-sm flex items-center justify-center gap-2">
+                        <i data-lucide="log-in" class="w-4 h-4"></i> Đăng Nhập Quản Trị
+                    </button>
+                    
+                    <div id="login-error" class="text-red-500 text-xs text-center font-semibold hidden">Tài khoản hoặc mật khẩu không chính xác!</div>
+                </form>
+
+                <div class="mt-6 pt-4 border-t border-slate-100 text-center">
+                    <button onclick="navigateTo('client')" class="text-xs text-slate-500 hover:text-blue-600 transition flex items-center justify-center gap-1 mx-auto">
+                        <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i> Quay lại trang chủ khách hàng
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ================================================= -->
+        <!-- 3. BẢNG QUẢN TRỊ ADMIN (ADMIN DASHBOARD VIEW)      -->
+        <!-- ================================================= -->
+        <div id="view-admin-dashboard" class="space-y-6 hidden">
+            
+            <!-- Header Admin -->
+            <div class="bg-slate-900 text-white rounded-2xl p-6 shadow-md flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="bg-emerald-500/20 text-emerald-400 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/30">ONLINE DATA</span>
+                        <h2 class="text-lg sm:text-xl font-bold">Bảng Quản Trị Bảo Hành Solatek</h2>
+                    </div>
+                    <p class="text-xs text-slate-400 mt-1">Xin chào Quản trị viên: <strong class="text-white">vuvothoi2704</strong></p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button onclick="exportDataExcel()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 px-3.5 py-2 rounded-lg text-xs font-medium border border-slate-700 flex items-center gap-1.5 transition">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i> Xuất Excel
+                    </button>
+                    <button onclick="processAdminLogout()" class="bg-red-500/20 hover:bg-red-500/30 text-red-300 px-3.5 py-2 rounded-lg text-xs font-semibold border border-red-500/30 flex items-center gap-1.5 transition">
+                        <i data-lucide="log-out" class="w-3.5 h-3.5"></i> Đăng Xuất
+                    </button>
+                </div>
+            </div>
+
+            <!-- Thống kê nhanh -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-slate-500">Tổng Mã Kho</p>
+                    <h3 id="stat-total" class="text-xl sm:text-2xl font-bold text-slate-800 mt-1">0</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-slate-500">Đã Kích Hoạt</p>
+                    <h3 id="stat-activated" class="text-xl sm:text-2xl font-bold text-emerald-600 mt-1">0</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-slate-500">Chưa Kích Hoạt</p>
+                    <h3 id="stat-pending" class="text-xl sm:text-2xl font-bold text-amber-600 mt-1">0</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                    <p class="text-xs text-slate-500">Doanh Số Tháng</p>
+                    <h3 id="stat-month" class="text-xl sm:text-2xl font-bold text-blue-600 mt-1">0</h3>
+                </div>
+            </div>
+
+            <!-- Form Thêm Serial Sản Phẩm Mới (Có Quét Camera) -->
+            <div class="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 class="font-bold text-sm text-slate-800 mb-4 flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i> Nhập Sản Phẩm & Serial Mới Vào Kho
+                </h3>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Tên Sản Phẩm *</label>
+                        <input type="text" id="admin-product-name" placeholder="Ví dụ: Inverter Solatek Hybrid 5kW" class="w-full px-3.5 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-600 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-500 uppercase mb-1">Mã Serial *</label>
+                        <div class="flex gap-1.5">
+                            <input type="text" id="admin-serial-code" placeholder="Mã Serial..." class="w-full px-3.5 py-2 border rounded-lg text-sm font-mono uppercase focus:ring-2 focus:ring-blue-600 focus:outline-none">
+                            <button onclick="startCameraScanner('admin-serial-code')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-lg border border-slate-300 text-xs font-semibold flex items-center gap-1 shrink-0">
+                                <i data-lucide="camera" class="w-4 h-4 text-blue-600"></i> Quét
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="addSerialToInventory()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg text-sm shadow transition flex items-center justify-center gap-1.5">
+                            <i data-lucide="save" class="w-4 h-4"></i> Lưu Vào Kho
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bảng Danh Sách Serial Kho & Bảo Hành -->
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                    <h3 class="font-bold text-sm text-slate-800">Danh Sách Mã Serial & Lịch Sử Kích Hoạt</h3>
+                    
+                    <div class="w-full sm:w-64">
+                        <input type="text" id="search-admin-table" onkeyup="filterAdminTable()" placeholder="Tìm theo Serial, tên, SĐT..." class="w-full px-3 py-1.5 border rounded-lg text-xs focus:ring-2 focus:ring-blue-600 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                        <thead>
+                            <tr class="bg-slate-100/70 text-slate-600 uppercase text-[11px] tracking-wider border-b border-slate-200">
+                                <th class="p-3.5">Mã Serial</th>
+                                <th class="p-3.5">Tên Sản Phẩm</th>
+                                <th class="p-3.5">Trạng Thái</th>
+                                <th class="p-3.5">Khách Hàng</th>
+                                <th class="p-3.5">SĐT</th>
+                                <th class="p-3.5">Hạn Bảo Hành</th>
+                                <th class="p-3.5 text-center">In Tem QR</th>
+                                <th class="p-3.5 text-center">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-table-body" class="divide-y divide-slate-100">
+                            <!-- Dữ liệu render từ JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- MODAL CAMERA SCANNER -->
+    <div id="modal-scanner" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-5 text-center">
+            <h3 class="font-bold text-slate-800 text-sm mb-2">Quét Mã QR / Barcode Qua Camera</h3>
+            <div id="camera-reader" class="rounded-xl overflow-hidden border border-slate-200 bg-black"></div>
+            <button onclick="stopCameraScanner()" class="mt-4 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 py-2.5 rounded-lg text-xs font-semibold">Đóng Camera</button>
+        </div>
+    </div>
+
+    <!-- MODAL XEM & IN TEM MA QR -->
+    <div id="modal-qr" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-xs w-full p-6 text-center printable-qr">
+            <h3 class="font-bold text-slate-800 text-sm">TEM BẢO HÀNH CHÍNH HÃNG</h3>
+            <p class="text-[10px] text-blue-900 font-bold uppercase mt-0.5">SOLATEK VIỆT NAM</p>
+            
+            <div id="qr-canvas-box" class="my-4 flex justify-center bg-white p-2 border rounded-xl shadow-inner"></div>
+            
+            <p id="qr-modal-serial" class="font-mono font-bold text-blue-700 text-sm uppercase">SLK-XXXXXX</p>
+            <p id="qr-modal-product" class="text-xs text-slate-500 mt-1 line-clamp-2">Tên sản phẩm</p>
+            
+            <div class="mt-5 flex gap-2">
+                <button onclick="printQRModal()" class="w-1/2 bg-blue-600 text-white py-2 rounded-lg text-xs font-semibold shadow hover:bg-blue-700">In Tem</button>
+                <button onclick="closeQRModal()" class="w-1/2 bg-slate-100 text-slate-700 py-2 rounded-lg text-xs font-semibold hover:bg-slate-200">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER CÔNG TY -->
+    <footer class="bg-white border-t border-slate-200 py-6 mt-10">
+        <div class="max-w-6xl mx-auto px-4 text-center">
+            <p class="text-xs text-slate-600 font-semibold">© 2026 CÔNG TY TNHH SOLATEK VIỆT NAM. Tất cả quyền được bảo lưu.</p>
+            <p class="text-[11px] text-slate-400 mt-1">ĐC: Thôn Bến Hải, Xã Đồng Việt, Bắc Ninh | Hotline: 0332 973 704</p>
+        </div>
+    </footer>
+
+    <!-- SCRIPT LOGIC XỬ LÝ -->
+    <script>
+        // --- 1. DỮ LIỆU MẪU BAN ĐẦU ---
+        const INITIAL_DATA = [
+            { serial: "SLK-2026-888", product: "Inverter Solatek Hybrid 5kW", status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" },
+            { serial: "SLK-2026-999", product: "Đèn Năng Lượng Mặt Trời Solatek 200W", status: "Đã kích hoạt", customer: "Nguyễn Văn Hùng", phone: "0912345678", address: "TP. Bắc Ninh", date: "15/01/2026", expiry: "15/01/2028" }
+        ];
+
+        let activeScannerInstance = null;
+        let scannerTargetInputId = '';
+
+        // Khởi tạo icon Lucide
+        lucide.createIcons();
+
+        // --- 2. QUẢN LÝ DỮ LIỆU (LOCALSTORAGE WITH CENTRAL LOGIC) ---
+        function loadInventoryData() {
+            const raw = localStorage.getItem('solatek_inventory');
+            if (!raw) {
+                localStorage.setItem('solatek_inventory', JSON.stringify(INITIAL_DATA));
+                return INITIAL_DATA;
+            }
+            return JSON.parse(raw);
+        }
+
+        function saveInventoryData(data) {
+            localStorage.setItem('solatek_inventory', JSON.stringify(data));
+        }
+
+        // --- 3. ĐIỀU HƯỚNG MÀN HÌNH THEO URL (ROUTING) ---
+        function handleURLRouting() {
+            const hash = window.location.hash;
+            const path = window.location.pathname;
+
+            if (hash === '#admin' || path.endsWith('admin.html')) {
+                // Kiểm tra trạng thái đã đăng nhập chưa
+                if (sessionStorage.getItem('admin_logged_in') === 'true') {
+                    navigateTo('admin-dashboard');
+                } else {
+                    navigateTo('admin-login');
+                }
+            } else {
+                navigateTo('client');
+            }
+        }
+
+        function navigateTo(viewName) {
+            document.getElementById('view-client').classList.add('hidden');
+            document.getElementById('view-admin-login').classList.add('hidden');
+            document.getElementById('view-admin-dashboard').classList.add('hidden');
+
+            if (viewName === 'client') {
+                document.getElementById('view-client').classList.remove('hidden');
+                history.replaceState(null, null, ' ');
+            } else if (viewName === 'admin-login') {
+                document.getElementById('view-admin-login').classList.remove('hidden');
+                window.location.hash = 'admin';
+            } else if (viewName === 'admin-dashboard') {
+                document.getElementById('view-admin-dashboard').classList.remove('hidden');
+                window.location.hash = 'admin';
+                renderAdminDashboard();
+            }
+        }
+
+        // --- 4. CÁC TÍNH NĂNG KHÁCH HÀNG ---
+        function switchClientTab(tab) {
+            const actTab = document.getElementById('client-activate-tab');
+            const lookupTab = document.getElementById('client-lookup-tab');
+            const actBtn = document.getElementById('tab-activate-btn');
+            const lookupBtn = document.getElementById('tab-lookup-btn');
+
+            if (tab === 'activate') {
+                actTab.classList.remove('hidden');
+                lookupTab.classList.add('hidden');
+                actBtn.className = "w-1/2 py-2.5 px-4 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 bg-white text-blue-900 shadow";
+                lookupBtn.className = "w-1/2 py-2.5 px-4 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-blue-900 transition-all duration-200";
+            } else {
+                lookupTab.classList.remove('hidden');
+                actTab.classList.add('hidden');
+                lookupBtn.className = "w-1/2 py-2.5 px-4 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 bg-white text-blue-900 shadow";
+                actBtn.className = "w-1/2 py-2.5 px-4 text-xs sm:text-sm font-medium rounded-lg text-slate-600 hover:text-blue-900 transition-all duration-200";
+            }
+        }
+
+        function processClientActivation(e) {
+            e.preventDefault();
+            const serial = document.getElementById('act-serial').value.trim().toUpperCase();
+            const name = document.getElementById('act-name').value.trim();
+            const phone = document.getElementById('act-phone').value.trim();
+            const address = document.getElementById('act-address').value.trim();
+            const alertBox = document.getElementById('act-alert');
+
+            let inventory = loadInventoryData();
+            let item = inventory.find(i => i.serial === serial);
+
+            alertBox.classList.remove('hidden');
+
+            if (!item) {
+                alertBox.className = "mt-4 p-4 rounded-xl text-xs sm:text-sm bg-red-50 border-red-200 text-red-700 font-semibold";
+                alertBox.innerHTML = "❌ Mã Serial không tồn tại trong hệ thống quản lý chính hãng Solatek Việt Nam!";
+                return;
+            }
+
+            if (item.status === "Đã kích hoạt") {
+                alertBox.className = "mt-4 p-4 rounded-xl text-xs sm:text-sm bg-amber-50 border-amber-200 text-amber-800 font-semibold";
+                alertBox.innerHTML = `⚠️ Mã Serial này đã được kích hoạt bảo hành vào ngày <strong>${item.date}</strong> rồi!`;
+                return;
+            }
+
+            const today = new Date();
+            const expiry = new Date();
+            expiry.setFullYear(today.getFullYear() + 2); // Bảo hành 2 năm
+
+            item.status = "Đã kích hoạt";
+            item.customer = name;
+            item.phone = phone;
+            item.address = address;
+            item.date = today.toLocaleDateString('vi-VN');
+            item.expiry = expiry.toLocaleDateString('vi-VN');
+
+            saveInventoryData(inventory);
+
+            alertBox.className = "mt-4 p-4 rounded-xl text-xs sm:text-sm bg-emerald-50 border-emerald-200 text-emerald-800 font-semibold space-y-1";
+            alertBox.innerHTML = `
+                <p class="text-base text-emerald-700">🎉 Kích Hoạt Bảo Hành Thành Công!</p>
+                <p>• Sản phẩm: <strong>${item.product}</strong></p>
+                <p>• Mã Serial: <strong>${item.serial}</strong></p>
+                <p>• Thời hạn bảo hành chính hãng đến: <strong class="text-blue-700">${item.expiry}</strong></p>
+            `;
+            document.getElementById('form-activate').reset();
+        }
+
+        function processClientLookup() {
+            const serial = document.getElementById('lookup-input').value.trim().toUpperCase();
+            const resultBox = document.getElementById('lookup-result');
+            
+            if (!serial) return;
+
+            let inventory = loadInventoryData();
+            let item = inventory.find(i => i.serial === serial);
+
+            resultBox.classList.remove('hidden');
+
+            if (!item) {
+                resultBox.innerHTML = `<p class="text-xs sm:text-sm text-red-600 font-medium text-center">❌ Không tìm thấy thông tin sản phẩm có mã Serial: ${serial}</p>`;
+                return;
+            }
+
+            if (item.status === "Chưa kích hoạt") {
+                resultBox.innerHTML = `
+                    <p class="text-emerald-700 font-bold text-sm">✔ Sản Phẩm Chính Hãng Solatek</p>
+                    <p class="text-xs text-slate-600">Sản phẩm: <strong>${item.product}</strong></p>
+                    <p class="text-xs text-slate-600">Trạng thái: <span class="text-amber-600 font-semibold">Chưa kích hoạt bảo hành</span></p>
+                    <button onclick="switchClientTab('activate'); document.getElementById('act-serial').value='${item.serial}';" class="w-full mt-2 bg-blue-600 text-white py-2 rounded-lg text-xs font-semibold">Kích hoạt ngay</button>
+                `;
+            } else {
+                resultBox.innerHTML = `
+                    <p class="text-emerald-700 font-bold text-sm">✔ Sản Phẩm Đã Được Bảo Hành Chính Hãng</p>
+                    <div class="text-xs space-y-1 text-slate-600">
+                        <p>• Sản phẩm: <strong>${item.product}</strong></p>
+                        <p>• Khách hàng: <strong>${item.customer}</strong> (${item.phone})</p>
+                        <p>• Ngày kích hoạt: <strong>${item.date}</strong></p>
+                        <p>• Hạn bảo hành: <strong class="text-blue-700 font-bold">${item.expiry}</strong></p>
+                    </div>
+                `;
+            }
+        }
+
+        // --- 5. CÁC TÍNH NĂNG ADMIN ---
+        function processAdminLogin(e) {
+            e.preventDefault();
+            const user = document.getElementById('admin-user').value.trim();
+            const pass = document.getElementById('admin-pass').value.trim();
+            const err = document.getElementById('login-error');
+
+            if (user === 'vuvothoi2704' && pass === '270493') {
+                sessionStorage.setItem('admin_logged_in', 'true');
+                err.classList.add('hidden');
+                navigateTo('admin-dashboard');
+            } else {
+                err.classList.remove('hidden');
+            }
+        }
+
+        function processAdminLogout() {
+            sessionStorage.removeItem('admin_logged_in');
+            navigateTo('client');
+        }
+
+        function renderAdminDashboard() {
+            const inventory = loadInventoryData();
+            const tbody = document.getElementById('admin-table-body');
+            tbody.innerHTML = '';
+
+            let total = inventory.length;
+            let activated = 0;
+            let pending = 0;
+
+            inventory.forEach((item, index) => {
+                if (item.status === "Đã kích hoạt") activated++;
+                else pending++;
+
+                let badge = item.status === "Đã kích hoạt" 
+                    ? `<span class="bg-emerald-100 text-emerald-800 font-semibold text-[10px] px-2 py-0.5 rounded-full">Đã kích hoạt</span>`
+                    : `<span class="bg-amber-100 text-amber-800 font-semibold text-[10px] px-2 py-0.5 rounded-full">Chưa kích hoạt</span>`;
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3.5 font-mono font-bold text-blue-700">${item.serial}</td>
+                        <td class="p-3.5 font-medium text-slate-800">${item.product}</td>
+                        <td class="p-3.5">${badge}</td>
+                        <td class="p-3.5">${item.customer || '---'}</td>
+                        <td class="p-3.5">${item.phone || '---'}</td>
+                        <td class="p-3.5 font-medium">${item.expiry || '---'}</td>
+                        <td class="p-3.5 text-center">
+                            <button onclick="showQRModal('${item.serial}', '${item.product}')" class="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition" title="In tem QR">
+                                <i data-lucide="qr-code" class="w-4 h-4 inline"></i>
+                            </button>
+                        </td>
+                        <td class="p-3.5 text-center">
+                            <button onclick="deleteSerialItem(${index})" class="p-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition" title="Xóa">
+                                <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-activated').innerText = activated;
+            document.getElementById('stat-pending').innerText = pending;
+            document.getElementById('stat-month').innerText = activated;
+
+            lucide.createIcons();
+        }
+
+        function addSerialToInventory() {
+            const product = document.getElementById('admin-product-name').value.trim();
+            const serial = document.getElementById('admin-serial-code').value.trim().toUpperCase();
+
+            if (!product || !serial) {
+                alert("Vui lòng điền đầy đủ Tên sản phẩm và Mã Serial!");
+                return;
+            }
+
+            let inventory = loadInventoryData();
+            if (inventory.some(i => i.serial === serial)) {
+                alert("Mã Serial này đã tồn tại trong kho!");
+                return;
+            }
+
+            inventory.push({
+                serial,
+                product,
+                status: "Chưa kích hoạt",
+                customer: "",
+                phone: "",
+                address: "",
+                date: "",
+                expiry: ""
+            });
+
+            saveInventoryData(inventory);
+            renderAdminDashboard();
+
+            document.getElementById('admin-product-name').value = '';
+            document.getElementById('admin-serial-code').value = '';
+            alert("Đã thêm thành công sản phẩm mới vào kho!");
+        }
+
+        function deleteSerialItem(index) {
+            if (confirm("Bạn có chắc chắn muốn xóa mã serial này khỏi kho không?")) {
+                let inventory = loadInventoryData();
+                inventory.splice(index, 1);
+                saveInventoryData(inventory);
+                renderAdminDashboard();
+            }
+        }
+
+        function filterAdminTable() {
+            const keyword = document.getElementById('search-admin-table').value.toLowerCase();
+            const rows = document.querySelectorAll('#admin-table-body tr');
+
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(keyword) ? '' : 'none';
+            });
+        }
+
+        function exportDataExcel() {
+            const inventory = loadInventoryData();
+            let csvContent = "data:text/csv;charset=utf-8,\uFEFF";
+            csvContent += "Mã Serial,Tên Sản Phẩm,Trạng Thái,Khách Hàng,Số Điện Thoại,Địa Chỉ,Ngày Kích Hoạt,Hạn Bảo Hành\n";
+
+            inventory.forEach(i => {
+                csvContent += `"${i.serial}","${i.product}","${i.status}","${i.customer}","${i.phone}","${i.address}","${i.date}","${i.expiry}"\n`;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `Bao_Hanh_Solatek_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- 6. QUÉT QR QUA CAMERA & TẠO TEM BẢO HÀNH ---
+        function startCameraScanner(inputId) {
+            scannerTargetInputId = inputId;
+            document.getElementById('modal-scanner').classList.remove('hidden');
+
+            activeScannerInstance = new Html5QrcodeScanner("camera-reader", { fps: 10, qrbox: 220 });
+            activeScannerInstance.render((decodedText) => {
+                document.getElementById(scannerTargetInputId).value = decodedText.toUpperCase();
+                stopCameraScanner();
+            }, (err) => {});
+        }
+
+        function stopCameraScanner() {
+            if (activeScannerInstance) {
+                activeScannerInstance.clear().catch(e => console.error(e));
+            }
+            document.getElementById('modal-scanner').classList.add('hidden');
+        }
+
+        function showQRModal(serial, product) {
+            const qrBox = document.getElementById('qr-canvas-box');
+            qrBox.innerHTML = '';
+
+            document.getElementById('qr-modal-serial').innerText = serial;
+            document.getElementById('qr-modal-product').innerText = product;
+
+            // URL dẫn trực tiếp về trang kích hoạt của serial đó
+            const activationURL = window.location.origin + window.location.pathname + `?serial=${serial}`;
+
+            new QRCode(qrBox, {
+                text: activationURL,
+                width: 140,
+                height: 140
+            });
+
+            document.getElementById('modal-qr').classList.remove('hidden');
+        }
+
+        function closeQRModal() {
+            document.getElementById('modal-qr').classList.add('hidden');
+        }
+
+        function printQRModal() {
+            window.print();
+        }
+
+        // --- 7. KHỞI CHẠY HỆ THỐNG ---
+        window.addEventListener('load', () => {
+            handleURLRouting();
+
+            // Lấy tham số Serial từ URL QR nếu có
+            const params = new URLSearchParams(window.location.search);
+            const urlSerial = params.get('serial');
+            if (urlSerial) {
+                document.getElementById('act-serial').value = urlSerial.toUpperCase();
+                switchClientTab('activate');
+            }
+        });
+
+        window.addEventListener('hashchange', handleURLRouting);
+    </script>
+</body>
+</html>
