@@ -139,23 +139,32 @@
                 </button>
             </div>
 
-            <!-- Thêm Serial vào kho -->
+            <!-- Thêm Serial vào kho (Hỗ trợ quét hàng loạt & Tùy chỉnh số tháng bảo hành) -->
             <div class="mb-8 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <h3 class="font-semibold text-sm text-slate-700 mb-3 flex items-center justify-between">
-                    <span class="flex items-center gap-1"><i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i> Thêm Serial Sản Phẩm Mới Vào Kho (Quét Hàng Loạt)</span>
+                    <span class="flex items-center gap-1"><i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i> Thêm Serial Sản Phẩm Mới Vào Kho</span>
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
-                    <div class="sm:col-span-5 flex gap-1">
+                    <div class="sm:col-span-4 flex gap-1">
                         <input type="text" id="new-serial" placeholder="Mã Serial..." class="w-full px-3 py-2 border rounded-lg text-sm uppercase font-mono">
                         <button type="button" onclick="startScanner('stock')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-medium flex items-center gap-1 shrink-0">
                             <i data-lucide="camera" class="w-4 h-4"></i> Quét
                         </button>
                     </div>
                     <div class="sm:col-span-4">
-                        <input type="text" id="new-product" placeholder="Tên sản phẩm chung..." class="w-full px-3 py-2 border rounded-lg text-sm">
+                        <input type="text" id="new-product" placeholder="Tên sản phẩm..." class="w-full px-3 py-2 border rounded-lg text-sm">
                     </div>
-                    <div class="sm:col-span-3">
-                        <button onclick="addSerialToStock()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm transition">Thêm Vào Kho</button>
+                    <div class="sm:col-span-2">
+                        <select id="new-months" class="w-full px-3 py-2 border rounded-lg text-sm bg-white">
+                            <option value="12">12 Tháng</option>
+                            <option value="24" selected>24 Tháng</option>
+                            <option value="36">36 Tháng</option>
+                            <option value="48">48 Tháng</option>
+                            <option value="60">60 Tháng</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-2">
+                        <button onclick="addSerialToStock()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg text-sm transition">Thêm Kho</button>
                     </div>
                 </div>
             </div>
@@ -183,6 +192,7 @@
                         <tr class="bg-slate-100 text-slate-600 text-xs uppercase">
                             <th class="p-3 border-b">Serial</th>
                             <th class="p-3 border-b">Sản phẩm</th>
+                            <th class="p-3 border-b">Bảo hành</th>
                             <th class="p-3 border-b">Trạng thái</th>
                             <th class="p-3 border-b">Khách hàng</th>
                             <th class="p-3 border-b">HSD</th>
@@ -207,8 +217,8 @@
         lucide.createIcons();
 
         const defaultSerials = [
-            { serial: "SLK-2026-001", product: "Đèn năng lượng mặt trời Solatek 100W", status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" },
-            { serial: "SLK-2026-002", product: "Inverter Solatek Hybrid 5kW", status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" }
+            { serial: "SLK-2026-001", product: "Đèn năng lượng mặt trời Solatek 100W", months: 24, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" },
+            { serial: "SLK-2026-002", product: "Inverter Solatek Hybrid 5kW", months: 24, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" }
         ];
 
         function getSerials() {
@@ -267,9 +277,10 @@
                 return;
             }
 
+            let totalMonths = parseInt(found.months) || 24;
             let today = new Date();
             let expiryDate = new Date();
-            expiryDate.setFullYear(today.getFullYear() + 2);
+            expiryDate.setMonth(today.getMonth() + totalMonths);
 
             found.status = "Đã kích hoạt";
             found.customer = name;
@@ -303,12 +314,14 @@
                     <div class="space-y-2 text-sm">
                         <p><strong>Sản phẩm:</strong> ${found.product}</p>
                         <p><strong>Serial:</strong> <span class="font-mono text-blue-600">${found.serial}</span></p>
+                        <p><strong>Thời hạn bảo hành:</strong> ${found.months || 24} tháng</p>
                         <p class="text-amber-600 font-semibold">Trạng thái: Chưa được kích hoạt bảo hành.</p>
                         <button onclick="switchTab('activate'); document.getElementById('act-serial').value='${found.serial}';" class="mt-2 w-full bg-blue-600 text-white py-2 rounded text-xs font-semibold">Kích hoạt ngay</button>
                     </div>`;
             } else {
-                // Bảo mật: Ẩn bớt số điện thoại (ví dụ: 033****704)
-                let maskedPhone = found.phone.length > 5 ? found.phone.slice(0, 3) + '****' + found.phone.slice(-2) : '****';
+                // Bảo mật tuyệt đối: Ẩn bớt số điện thoại khách hàng, chỉ hiển thị 3 số đầu và 2 số cuối
+                let phoneStr = String(found.phone || '');
+                let maskedPhone = phoneStr.length > 5 ? phoneStr.slice(0, 3) + '****' + phoneStr.slice(-2) : '****';
                 
                 resBox.innerHTML = `
                     <div class="space-y-2 text-sm">
@@ -316,7 +329,7 @@
                         <p><strong>Sản phẩm:</strong> ${found.product}</p>
                         <p><strong>Serial:</strong> <span class="font-mono text-blue-600">${found.serial}</span></p>
                         <p><strong>Khách hàng:</strong> ${found.customer}</p>
-                        <p><strong>Điện thoại:</strong> ${maskedPhone}</p>
+                        <p><strong>Điện thoại:</strong> <span class="font-mono font-semibold text-slate-700">${maskedPhone}</span></p>
                         <p><strong>Ngày kích hoạt:</strong> ${found.date}</p>
                         <p><strong>Hạn bảo hành:</strong> <span class="text-blue-600 font-bold">${found.expiry}</span></p>
                     </div>`;
@@ -386,6 +399,7 @@
                     <tr class="border-b hover:bg-slate-50">
                         <td class="p-3 font-mono font-semibold text-blue-600">${item.serial}</td>
                         <td class="p-3">${item.product}</td>
+                        <td class="p-3">${item.months || 24} Tháng</td>
                         <td class="p-3"><span class="px-2 py-1 rounded text-xs font-semibold ${badgeClass}">${item.status}</span></td>
                         <td class="p-3">${item.customer || '---'}</td>
                         <td class="p-3">${item.expiry || '---'}</td>
@@ -402,6 +416,7 @@
         function addSerialToStock() {
             const serial = document.getElementById('new-serial').value.trim().toUpperCase().replace(/\s+/g, '');
             const product = document.getElementById('new-product').value.trim();
+            const months = parseInt(document.getElementById('new-months').value) || 24;
 
             if (!serial || !product) {
                 alert("Vui lòng điền đầy đủ mã Serial và Tên sản phẩm!");
@@ -414,7 +429,7 @@
                 return;
             }
 
-            serials.push({ serial, product, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" });
+            serials.push({ serial, product, months, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" });
             saveSerials(serials);
             renderAdminTable();
 
@@ -427,7 +442,7 @@
         }
 
         function deleteSerial(index) {
-            if (confirm("Bạn có chắc chắn muốn xóa mã serial này không?")) {
+            if (confirm("Vui lòng xác nhận xóa mã serial này?")) {
                 let serials = getSerials();
                 serials.splice(index, 1);
                 saveSerials(serials);
@@ -469,7 +484,7 @@
                 }, 
                 (error) => {}
             ).catch(err => {
-                alert("Không thể mở camera. Vui lòng cấp quyền sử dụng camera cho trình duyệt!");
+                alert("Không thể mở camera. Vui lòng cấp quyền camera cho trình duyệt!");
             });
         }
 
