@@ -139,7 +139,7 @@
                 </button>
             </div>
 
-            <!-- Thêm Serial vào kho (Hỗ trợ quét liên tục hàng loạt) -->
+            <!-- Thêm Serial vào kho -->
             <div class="mb-8 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <h3 class="font-semibold text-sm text-slate-700 mb-3 flex items-center justify-between">
                     <span class="flex items-center gap-1"><i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i> Thêm Serial Sản Phẩm Mới Vào Kho (Quét Hàng Loạt)</span>
@@ -160,13 +160,11 @@
                 </div>
             </div>
 
-            <!-- Khu vực quét kho hàng loạt -->
             <div id="admin-reader-container" class="hidden mb-6 border rounded-lg p-3 bg-slate-50 max-w-md mx-auto">
                 <div id="admin-reader"></div>
                 <button type="button" onclick="stopScanner()" class="mt-2 w-full bg-red-50 text-red-600 hover:bg-red-100 py-1.5 rounded text-xs font-semibold">Đóng Camera Quét Kho</button>
             </div>
 
-            <!-- Thanh công cụ lọc dữ liệu và tìm kiếm -->
             <div class="flex flex-col sm:flex-row justify-between items-center mb-4 gap-3">
                 <h3 class="font-semibold text-sm text-slate-700">Danh Sách Serial & Trạng Thái Bảo Hành</h3>
                 <div class="flex items-center gap-2 w-full sm:w-auto">
@@ -191,9 +189,7 @@
                             <th class="p-3 border-b text-center">Thao tác</th>
                         </tr>
                     </thead>
-                    <tbody id="admin-serial-table">
-                        <!-- Data injected by JS -->
-                    </tbody>
+                    <tbody id="admin-serial-table"></tbody>
                 </table>
             </div>
         </div>
@@ -246,7 +242,6 @@
             }
         }
 
-        // Kích hoạt bảo hành (Đã chuẩn hóa định dạng tránh lỗi không nhận mã)
         function handleActivate(e) {
             e.preventDefault();
             const serial = document.getElementById('act-serial').value.trim().toUpperCase().replace(/\s+/g, '');
@@ -312,13 +307,16 @@
                         <button onclick="switchTab('activate'); document.getElementById('act-serial').value='${found.serial}';" class="mt-2 w-full bg-blue-600 text-white py-2 rounded text-xs font-semibold">Kích hoạt ngay</button>
                     </div>`;
             } else {
+                // Bảo mật: Ẩn bớt số điện thoại (ví dụ: 033****704)
+                let maskedPhone = found.phone.length > 5 ? found.phone.slice(0, 3) + '****' + found.phone.slice(-2) : '****';
+                
                 resBox.innerHTML = `
                     <div class="space-y-2 text-sm">
                         <p class="text-green-600 font-bold">✔ Sản phẩm chính hãng đã kích hoạt</p>
                         <p><strong>Sản phẩm:</strong> ${found.product}</p>
                         <p><strong>Serial:</strong> <span class="font-mono text-blue-600">${found.serial}</span></p>
                         <p><strong>Khách hàng:</strong> ${found.customer}</p>
-                        <p><strong>Điện thoại:</strong> ${found.phone}</p>
+                        <p><strong>Điện thoại:</strong> ${maskedPhone}</p>
                         <p><strong>Ngày kích hoạt:</strong> ${found.date}</p>
                         <p><strong>Hạn bảo hành:</strong> <span class="text-blue-600 font-bold">${found.expiry}</span></p>
                     </div>`;
@@ -368,7 +366,6 @@
             document.getElementById('adm-pass').value = '';
         }
 
-        // Render bảng Admin có tích hợp bộ lọc trạng thái và tìm kiếm
         function renderAdminTable() {
             let serials = getSerials();
             let tbody = document.getElementById('admin-serial-table');
@@ -422,9 +419,8 @@
             renderAdminTable();
 
             document.getElementById('new-serial').value = '';
-            alert("Đã thêm serial mới vào kho thành công! Bạn có thể tiếp tục quét mã tiếp theo.");
+            alert("Đã thêm serial mới vào kho thành công!");
             
-            // Tự động bật lại quét kho liên tục nếu đang ở chế độ quét hàng loạt
             if (activeScannerMode === 'stock') {
                 document.getElementById('new-serial').focus();
             }
@@ -439,7 +435,6 @@
             }
         }
 
-        // Tối ưu Camera Quét QR (Mặc định camera sau & Quét liên tục hàng loạt)
         let html5QrcodeScanner = null;
         let activeScannerMode = null;
 
@@ -457,7 +452,6 @@
             html5QrcodeScanner = new Html5Qrcode(targetDiv);
             const config = { fps: 15, qrbox: { width: 250, height: 250 } };
 
-            // Ưu tiên sử dụng camera sau (environment)
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 config, 
@@ -468,7 +462,6 @@
                         stopScanner();
                     } else if (mode === 'stock') {
                         document.getElementById('new-serial').value = cleanText;
-                        // Tự động thêm vào kho ngay khi quét xong để hỗ trợ quét hàng loạt cực nhanh
                         setTimeout(() => {
                             addSerialToStock();
                         }, 200);
@@ -491,7 +484,6 @@
             activeScannerMode = null;
         }
 
-        // Kiểm tra trạng thái đăng nhập tự động khi tải trang
         window.onload = function() {
             if (localStorage.getItem('solatek_admin_logged') === 'true' && window.location.hash === '#admin') {
                 openAdminDashboard();
