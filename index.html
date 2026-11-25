@@ -174,7 +174,7 @@
 
             <div class="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <h3 class="font-semibold text-sm text-slate-700 mb-3 flex items-center gap-1.5">
-                    <i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i> Thêm Serial Mới Vào Kho (Khớp Theo 10 Chữ Số)
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i> Thêm Serial Mới Vào Kho (Khớp 10 Ký Tự Chữ & Số)
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
                     <div class="sm:col-span-4 flex gap-1.5">
@@ -200,7 +200,7 @@
                         <button type="button" onclick="addSerialToStock()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 rounded-lg text-sm transition">Thêm Kho</button>
                     </div>
                 </div>
-                <p class="text-[11px] text-slate-500 mt-2">* Tự động nhận diện theo <b>10 chữ số cuối</b> nếu mã QR có kèm chữ; nhập trước <b>Tên sản phẩm</b> & <b>Số tháng</b> để quét liên tục.</p>
+                <p class="text-[11px] text-slate-500 mt-2">* Tự động so sánh <b>10 ký tự chữ & số cuối</b>; nhập trước <b>Tên sản phẩm</b> & <b>Số tháng</b> để quét liên tục.</p>
             </div>
 
             <div id="reader-stock-container" class="hidden mb-6 border rounded-xl p-3 bg-slate-50 max-w-md mx-auto">
@@ -224,7 +224,7 @@
                 <table class="w-full text-left border-collapse text-xs sm:text-sm">
                     <thead>
                         <tr class="bg-slate-100 text-slate-600 text-[11px] uppercase">
-                            <th class="p-3 border-b">Serial (10 số)</th>
+                            <th class="p-3 border-b">Serial (10 ký tự)</th>
                             <th class="p-3 border-b">Sản phẩm</th>
                             <th class="p-3 border-b">Gói BH</th>
                             <th class="p-3 border-b">Trạng thái</th>
@@ -255,30 +255,28 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmP5w8ZZ2A4uuHToe7pFKqA43QQqToVV7G0P6mFvVfs7Qmt9kVNCYlYUJh-83pSIKRhw/exec";
 
         const defaultSerials = [
-            { serial: "2026000001", product: "Đèn năng lượng mặt trời Solatek 100W", months: 24, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" },
-            { serial: "2026000002", product: "Inverter Solatek Hybrid 5kW", months: 36, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" }
+            { serial: "SLK2026001", product: "Đèn năng lượng mặt trời Solatek 100W", months: 24, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" },
+            { serial: "SLK2026002", product: "Inverter Solatek Hybrid 5kW", months: 36, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" }
         ];
 
         function normalizeCode10(val) {
-            const digits = (val || '').toString().replace(/\D+/g, '');
-            if (digits.length >= 10) {
-                return digits.slice(-10);
+            const cleaned = (val || '')
+                .toString()
+                .trim()
+                .toUpperCase()
+                .replace(/^SN\b[:\-\s]*/i, '')
+                .replace(/[^A-Z0-9]/g, '');
+            if (cleaned.length >= 10) {
+                return cleaned.slice(-10);
             }
-            return (val || '').toString().trim().toUpperCase().replace(/\s+/g, '');
+            return cleaned;
         }
 
         function isSameCode(a, b) {
-            const rawA = (a || '').toString().trim().toUpperCase().replace(/\s+/g, '');
-            const rawB = (b || '').toString().trim().toUpperCase().replace(/\s+/g, '');
-            if (!rawA || !rawB) return false;
-            if (rawA === rawB) return true;
-
-            const dA = rawA.replace(/\D+/g, '');
-            const dB = rawB.replace(/\D+/g, '');
-            if (dA.length >= 10 && dB.length >= 10) {
-                return dA.slice(-10) === dB.slice(-10);
-            }
-            return false;
+            const keyA = normalizeCode10(a);
+            const keyB = normalizeCode10(b);
+            if (!keyA || !keyB) return false;
+            return keyA === keyB;
         }
 
         function showToast(msg) {
