@@ -31,7 +31,7 @@
                 </div>
             </div>
             <div class="text-center sm:text-right text-xs text-blue-100">
-                <p>📍 Thôn Bến Hải, Xã Đồng Việt, TP.Bắc Ninh</p>
+                <p>📍 Thôn Bến Hải, Xã Đồng Việt, Bắc Ninh</p>
                 <p>☎️ Hotline: 0332 973 704</p>
             </div>
         </div>
@@ -194,7 +194,6 @@
                             <option value="36">36 Tháng</option>
                             <option value="48">48 Tháng</option>
                             <option value="60">60 Tháng</option>
-                            <option value="72">72 Tháng</option>
                         </select>
                     </div>
                     <div class="sm:col-span-2">
@@ -217,7 +216,7 @@
                         <option value="Chưa kích hoạt">Chưa kích hoạt</option>
                         <option value="Đã kích hoạt">Đã kích hoạt</option>
                     </select>
-                    <input type="text" id="admin-search" oninput="renderAdminTable()" placeholder="Tìm serial, tên khách..." class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs w-full sm:w-48 focus:outline-none">
+                    <input type="text" id="admin-search" oninput="renderAdminTable()" placeholder="Tìm serial, tên khách, địa chỉ..." class="px-3 py-1.5 border border-slate-300 rounded-lg text-xs w-full sm:w-52 focus:outline-none">
                 </div>
             </div>
 
@@ -229,7 +228,7 @@
                             <th class="p-3 border-b">Sản phẩm</th>
                             <th class="p-3 border-b">Gói BH</th>
                             <th class="p-3 border-b">Trạng thái</th>
-                            <th class="p-3 border-b">Khách hàng & SĐT</th>
+                            <th class="p-3 border-b">Khách hàng, SĐT & Địa chỉ</th>
                             <th class="p-3 border-b">Hạn BH</th>
                             <th class="p-3 border-b text-center">Xóa</th>
                         </tr>
@@ -314,9 +313,9 @@
                         product: (item.product || '').toString().trim(),
                         months: Number(item.months) || 24,
                         status: item.status || 'Chưa kích hoạt',
-                        customer: item.customer || '',
-                        phone: item.phone || '',
-                        address: item.address || '',
+                        customer: (item.customer || '').toString().trim(),
+                        phone: (item.phone || '').toString().trim(),
+                        address: (item.address || '').toString().trim(),
                         date: item.date || '',
                         expiry: item.expiry || ''
                     })).filter(x => x.serial);
@@ -535,7 +534,8 @@
                 let matchSearch = item.serial.toLowerCase().includes(searchText) || 
                                   item.product.toLowerCase().includes(searchText) || 
                                   (item.customer && item.customer.toLowerCase().includes(searchText)) ||
-                                  (item.phone && item.phone.includes(searchText));
+                                  (item.phone && item.phone.includes(searchText)) ||
+                                  (item.address && item.address.toLowerCase().includes(searchText));
                 return matchStatus && matchSearch;
             });
 
@@ -547,7 +547,11 @@
             filtered.forEach((item) => {
                 let actualIndex = serials.findIndex(s => isSameCode(s.serial, item.serial));
                 let badgeClass = item.status === "Đã kích hoạt" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700";
-                let customerInfo = item.customer ? `<div class="font-medium text-slate-800">${item.customer}</div><div class="text-[11px] text-slate-500">${item.phone}</div>` : '---';
+                let customerInfo = item.customer
+                    ? `<div class="font-medium text-slate-800">${item.customer}</div>` +
+                      `<div class="text-[11px] text-slate-500">${item.phone || ''}</div>` +
+                      (item.address ? `<div class="text-[11px] text-slate-600 mt-0.5">📍 ${item.address}</div>` : '')
+                    : '---';
 
                 tbody.innerHTML += `
                     <tr class="border-b hover:bg-slate-50">
