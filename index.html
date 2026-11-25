@@ -181,10 +181,10 @@
                 </div>
             </div>
 
-            <!-- NHẬP KHO -->
+            <!-- NHẬP KHO CHƯA KÍCH HOẠT + NGÀY NHẬP KHO PHÍA DƯỚI -->
             <div class="mb-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <h3 class="font-semibold text-sm text-slate-700 mb-3 flex items-center gap-1.5">
-                    <i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i> Thêm Serial Mới Vào Kho (Khớp 10 Ký Tự Chữ & Số)
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i> Thêm Serial Mới Vào Kho (Chưa Kích Hoạt)
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
                     <div class="sm:col-span-4 flex gap-1.5">
@@ -207,10 +207,18 @@
                         </select>
                     </div>
                     <div class="sm:col-span-2">
-                        <button type="button" onclick="addSerialToStock()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 rounded-lg text-sm transition">Thêm Kho</button>
+                        <button type="button" id="btn-add-stock" onclick="addSerialToStock()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 rounded-lg text-sm transition">Thêm Kho</button>
                     </div>
                 </div>
-                <p class="text-[11px] text-slate-500 mt-2">* Tự động so sánh <b>10 ký tự chữ & số cuối</b>; nhập trước <b>Tên sản phẩm</b> & <b>Số tháng</b> để quét liên tục.</p>
+
+                <!-- HÀNG NGÀY NHẬP KHO NGAY PHÍA DƯỚI -->
+                <div class="mt-3 pt-3 border-t border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <label for="new-import-date" class="text-xs font-semibold text-slate-600 shrink-0">Ngày nhập kho (chưa kích hoạt):</label>
+                        <input type="date" id="new-import-date" class="px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs bg-white text-slate-700 font-medium">
+                    </div>
+                    <p class="text-[11px] text-slate-500">* Tự khớp <b>10 ký tự chữ & số cuối</b>; có cơ chế chặn lưu trùng khi quét QR liên tục.</p>
+                </div>
             </div>
 
             <!-- XUẤT KHO BÁN HÀNG -->
@@ -223,7 +231,7 @@
                     <button type="button" onclick="startScanner('export')" class="bg-blue-600 hover:bg-blue-700 text-white px-3.5 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 shrink-0">
                         <i data-lucide="camera" class="w-4 h-4"></i> Quét Xuất Kho
                     </button>
-                    <button type="button" onclick="exportSerialFromStock()" class="bg-blue-900 hover:bg-blue-950 text-white font-semibold px-4 py-2 rounded-lg text-sm shrink-0 transition">
+                    <button type="button" id="btn-export-stock" onclick="exportSerialFromStock()" class="bg-blue-900 hover:bg-blue-950 text-white font-semibold px-4 py-2 rounded-lg text-sm shrink-0 transition">
                         Xác Nhận Xuất Kho
                     </button>
                 </div>
@@ -346,6 +354,27 @@
         document.getElementById('chat-message-box').innerHTML = CHAT_CONFIG.topics.welcome;
         document.getElementById('chat-zalo-link').href = CHAT_CONFIG.zaloUrl;
 
+        function getTodayInputValue() {
+            const now = new Date();
+            const y = now.getFullYear();
+            const m = String(now.getMonth() + 1).padStart(2, '0');
+            const d = String(now.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+        function formatDisplayDateFromISO(isoStr) {
+            if (!isoStr || !/^\d{4}-\d{2}-\d{2}$/.test(isoStr)) return '';
+            const [y, m, d] = isoStr.split('-');
+            return `${d}/${m}/${y}`;
+        }
+
+        function setDefaultImportDate() {
+            const el = document.getElementById('new-import-date');
+            if (el && !el.value) {
+                el.value = getTodayInputValue();
+            }
+        }
+
         function toggleChatBubble(forceState) {
             const panel = document.getElementById('chat-panel');
             const shouldOpen = typeof forceState === 'boolean' ? forceState : panel.classList.contains('hidden');
@@ -360,8 +389,8 @@
         }
 
         const defaultSerials = [
-            { serial: "SLK2026001", product: "Đèn năng lượng mặt trời Solatek 100W", months: 24, status: "Chưa kích hoạt", exportDate: "", customer: "", phone: "", address: "", date: "", expiry: "" },
-            { serial: "SLK2026002", product: "Inverter Solatek Hybrid 5kW", months: 36, status: "Chưa kích hoạt", exportDate: "", customer: "", phone: "", address: "", date: "", expiry: "" }
+            { serial: "SLK2026001", product: "Đèn năng lượng mặt trời Solatek 100W", months: 24, status: "Chưa kích hoạt", importDate: "", exportDate: "", customer: "", phone: "", address: "", date: "", expiry: "" },
+            { serial: "SLK2026002", product: "Inverter Solatek Hybrid 5kW", months: 36, status: "Chưa kích hoạt", importDate: "", exportDate: "", customer: "", phone: "", address: "", date: "", expiry: "" }
         ];
 
         function normalizeCode10(val) {
@@ -418,6 +447,7 @@
                         product: (item.product || '').toString().trim(),
                         months: Number(item.months) || 24,
                         status: item.status || 'Chưa kích hoạt',
+                        importDate: item.importDate || '',
                         exportDate: item.exportDate || '',
                         customer: (item.customer || '').toString().trim(),
                         phone: (item.phone || '').toString().trim(),
@@ -613,6 +643,7 @@
             document.getElementById('view-lookup').classList.add('hidden');
             document.getElementById('client-nav').classList.add('hidden');
             document.getElementById('view-admin-dashboard').classList.remove('hidden');
+            setDefaultImportDate();
             renderAdminTable();
             loadFromSheet(false);
         }
@@ -658,9 +689,12 @@
                     ? "bg-green-100 text-green-700"
                     : (item.status === "Đã xuất kho" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700");
 
-                let exportSub = item.exportDate && item.status === "Đã xuất kho"
-                    ? `<div class="text-[10px] text-blue-600 mt-0.5">Xuất: ${item.exportDate}</div>`
-                    : '';
+                let subNote = '';
+                if (item.status === "Đã xuất kho" && item.exportDate) {
+                    subNote = `<div class="text-[10px] text-blue-600 mt-0.5">Xuất: ${item.exportDate}</div>`;
+                } else if (item.status === "Chưa kích hoạt" && item.importDate) {
+                    subNote = `<div class="text-[10px] text-slate-500 mt-0.5">Nhập: ${item.importDate}</div>`;
+                }
 
                 let customerInfo = item.customer
                     ? `<div class="font-medium text-slate-800">${item.customer}</div>` +
@@ -673,7 +707,7 @@
                         <td class="p-3 font-mono font-semibold text-blue-600 whitespace-nowrap">${item.serial}</td>
                         <td class="p-3">${item.product}</td>
                         <td class="p-3 whitespace-nowrap">${item.months || 24}T</td>
-                        <td class="p-3 whitespace-nowrap"><span class="px-2 py-0.5 rounded text-[11px] font-semibold ${badgeClass}">${item.status}</span>${exportSub}</td>
+                        <td class="p-3 whitespace-nowrap"><span class="px-2 py-0.5 rounded text-[11px] font-semibold ${badgeClass}">${item.status}</span>${subNote}</td>
                         <td class="p-3">${customerInfo}</td>
                         <td class="p-3 whitespace-nowrap">${item.expiry || '---'}</td>
                         <td class="p-3 text-center">
@@ -686,70 +720,133 @@
             lucide.createIcons();
         }
 
+        let isAddingStock = false;
+
         async function addSerialToStock(isAutoScan = false) {
-            const rawSerial = document.getElementById('new-serial').value.trim().toUpperCase().replace(/\s+/g, '');
-            const serialKey = normalizeCode10(rawSerial);
-            const product = document.getElementById('new-product').value.trim();
-            const months = parseInt(document.getElementById('new-months').value) || 24;
+            if (isAddingStock) return;
+            isAddingStock = true;
+            const btn = document.getElementById('btn-add-stock');
+            if (btn) btn.disabled = true;
 
-            if (!serialKey || !product) {
-                if (!isAutoScan) alert("Vui lòng nhập đầy đủ Mã Serial và Tên sản phẩm!");
-                else showToast("⚠️ Nhập Tên sản phẩm trước khi quét hàng loạt!");
-                return;
-            }
+            try {
+                const rawSerial = document.getElementById('new-serial').value.trim().toUpperCase().replace(/\s+/g, '');
+                const serialKey = normalizeCode10(rawSerial);
+                const product = document.getElementById('new-product').value.trim();
+                const months = parseInt(document.getElementById('new-months').value) || 24;
+                const importISO = document.getElementById('new-import-date').value || getTodayInputValue();
+                const importDateDisplay = formatDisplayDateFromISO(importISO);
 
-            let serials = getSerials();
-            const existing = serials.find(s => isSameCode(s.serial, serialKey));
-            const itemToSync = existing || { serial: serialKey, product, months, status: "Chưa kích hoạt", exportDate: "", customer: "", phone: "", address: "", date: "", expiry: "" };
+                if (!serialKey || !product) {
+                    if (!isAutoScan) alert("Vui lòng nhập đầy đủ Mã Serial và Tên sản phẩm!");
+                    else showToast("⚠️ Nhập Tên sản phẩm trước khi quét hàng loạt!");
+                    return;
+                }
 
-            if (!existing) {
-                serials.unshift(itemToSync);
+                let serials = getSerials();
+                const existingIndex = serials.findIndex(s => isSameCode(s.serial, serialKey));
+
+                if (existingIndex !== -1) {
+                    const existing = serials[existingIndex];
+                    if (existing.status === "Chưa kích hoạt") {
+                        existing.product = product;
+                        existing.months = months;
+                        if (importDateDisplay) existing.importDate = importDateDisplay;
+                        saveSerials(serials);
+                        renderAdminTable();
+                    }
+                    document.getElementById('new-serial').value = '';
+                    showToast(`⚠️ Mã ${serialKey} đã có trong hệ thống (không lưu trùng)!`);
+                    return;
+                }
+
+                const newItem = {
+                    serial: serialKey,
+                    product,
+                    months,
+                    status: "Chưa kích hoạt",
+                    importDate: importDateDisplay,
+                    exportDate: "",
+                    customer: "",
+                    phone: "",
+                    address: "",
+                    date: "",
+                    expiry: ""
+                };
+
+                serials.unshift(newItem);
                 saveSerials(serials);
                 renderAdminTable();
-            } else {
-                showToast(`ℹ️ Mã ${serialKey} đã có trong máy, vẫn đang đẩy lên Sheets...`);
-            }
 
-            const synced = await syncToSheet({ action: "addStock", ...itemToSync });
-            document.getElementById('new-serial').value = '';
-            if (synced) {
-                showToast(`✅ Đã lưu mã ${serialKey} (${months} tháng) lên Sheets!`);
+                const synced = await syncToSheet({
+                    action: "addStock",
+                    serial: newItem.serial,
+                    product: newItem.product,
+                    months: newItem.months,
+                    status: newItem.status,
+                    importDate: importISO
+                });
+
+                document.getElementById('new-serial').value = '';
+                if (synced) {
+                    showToast(`✅ Đã lưu kho ${serialKey} (${importDateDisplay || 'hôm nay'})!`);
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+                isAddingStock = false;
             }
         }
 
+        let isExportingStock = false;
+
         async function exportSerialFromStock(isAutoScan = false) {
-            const rawSerial = document.getElementById('export-serial').value.trim().toUpperCase().replace(/\s+/g, '');
-            const serialKey = normalizeCode10(rawSerial);
+            if (isExportingStock) return;
+            isExportingStock = true;
+            const btn = document.getElementById('btn-export-stock');
+            if (btn) btn.disabled = true;
 
-            if (!serialKey) {
-                if (!isAutoScan) alert("Vui lòng nhập hoặc quét mã serial xuất kho!");
-                return;
-            }
+            try {
+                const rawSerial = document.getElementById('export-serial').value.trim().toUpperCase().replace(/\s+/g, '');
+                const serialKey = normalizeCode10(rawSerial);
 
-            let serials = getSerials();
-            let found = serials.find(s => isSameCode(s.serial, serialKey));
+                if (!serialKey) {
+                    if (!isAutoScan) alert("Vui lòng nhập hoặc quét mã serial xuất kho!");
+                    return;
+                }
 
-            if (!found) {
-                showToast(`❌ Mã ${serialKey} chưa có trong kho!`);
-                return;
-            }
+                let serials = getSerials();
+                let found = serials.find(s => isSameCode(s.serial, serialKey));
 
-            if (found.status === "Đã kích hoạt") {
-                showToast(`ℹ️ Mã ${found.serial} đã kích hoạt bảo hành rồi.`);
+                if (!found) {
+                    showToast(`❌ Mã ${serialKey} chưa có trong kho!`);
+                    return;
+                }
+
+                if (found.status === "Đã kích hoạt") {
+                    showToast(`ℹ️ Mã ${found.serial} đã kích hoạt bảo hành rồi.`);
+                    document.getElementById('export-serial').value = '';
+                    return;
+                }
+
+                if (found.status === "Đã xuất kho") {
+                    showToast(`⚠️ Mã ${found.serial} đã xuất kho trước đó rồi!`);
+                    document.getElementById('export-serial').value = '';
+                    return;
+                }
+
+                const todayStr = new Date().toLocaleDateString('vi-VN');
+                found.status = "Đã xuất kho";
+                found.exportDate = todayStr;
+
+                saveSerials(serials);
+                renderAdminTable();
+                await syncToSheet({ action: "exportStock", serial: found.serial });
+
                 document.getElementById('export-serial').value = '';
-                return;
+                showToast(`📦 Đã xuất kho & ghi lịch sử ${found.serial}`);
+            } finally {
+                if (btn) btn.disabled = false;
+                isExportingStock = false;
             }
-
-            const todayStr = new Date().toLocaleDateString('vi-VN');
-            found.status = "Đã xuất kho";
-            found.exportDate = todayStr;
-
-            saveSerials(serials);
-            renderAdminTable();
-            await syncToSheet({ action: "exportStock", serial: found.serial });
-
-            document.getElementById('export-serial').value = '';
-            showToast(`📦 Đã xuất kho & ghi lịch sử ${found.serial}`);
         }
 
         function deleteSerial(index) {
@@ -765,43 +862,55 @@
         let html5QrcodeScanner = null;
         let lastScannedCode = "";
         let lastScannedTime = 0;
+        let scanCooldown = false;
 
         function startScanner(mode) {
             stopScanner();
+            scanCooldown = false;
             const containerId = `reader-${mode}-container`;
             const targetId = `reader-${mode}`;
             document.getElementById(containerId).classList.remove('hidden');
 
             html5QrcodeScanner = new Html5Qrcode(targetId);
-            const config = { fps: 12, qrbox: { width: 230, height: 230 } };
+            const config = { fps: 10, qrbox: { width: 230, height: 230 } };
 
             html5QrcodeScanner.start(
                 { facingMode: "environment" }, 
                 config, 
-                (decodedText) => {
+                async (decodedText) => {
+                    if (scanCooldown) return;
+
                     let cleanText = normalizeCode10(decodedText);
                     let now = Date.now();
 
-                    if (cleanText === lastScannedCode && (now - lastScannedTime) < 1500) {
+                    if (!cleanText || (cleanText === lastScannedCode && (now - lastScannedTime) < 2500)) {
                         return;
                     }
+
+                    scanCooldown = true;
                     lastScannedCode = cleanText;
                     lastScannedTime = now;
 
-                    if (mode === 'act') {
-                        document.getElementById('act-serial').value = cleanText;
-                        stopScanner();
-                        showToast(`Đã nhận mã: ${cleanText}`);
-                    } else if (mode === 'lookup') {
-                        document.getElementById('lookup-serial').value = cleanText;
-                        stopScanner();
-                        handleLookup();
-                    } else if (mode === 'stock') {
-                        document.getElementById('new-serial').value = cleanText;
-                        addSerialToStock(true);
-                    } else if (mode === 'export') {
-                        document.getElementById('export-serial').value = cleanText;
-                        exportSerialFromStock(true);
+                    try {
+                        if (mode === 'act') {
+                            document.getElementById('act-serial').value = cleanText;
+                            stopScanner();
+                            showToast(`Đã nhận mã: ${cleanText}`);
+                        } else if (mode === 'lookup') {
+                            document.getElementById('lookup-serial').value = cleanText;
+                            stopScanner();
+                            await handleLookup();
+                        } else if (mode === 'stock') {
+                            document.getElementById('new-serial').value = cleanText;
+                            await addSerialToStock(true);
+                        } else if (mode === 'export') {
+                            document.getElementById('export-serial').value = cleanText;
+                            await exportSerialFromStock(true);
+                        }
+                    } finally {
+                        setTimeout(() => {
+                            scanCooldown = false;
+                        }, 1500);
                     }
                 }, 
                 () => {}
@@ -812,6 +921,7 @@
         }
 
         function stopScanner() {
+            scanCooldown = false;
             if (html5QrcodeScanner) {
                 html5QrcodeScanner.stop().then(() => {
                     html5QrcodeScanner.clear();
@@ -826,6 +936,7 @@
 
         window.addEventListener('hashchange', checkAdminRoute);
         window.addEventListener('load', () => {
+            setDefaultImportDate();
             checkAdminRoute();
             loadFromSheet(false);
         });
