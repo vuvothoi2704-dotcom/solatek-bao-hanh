@@ -174,11 +174,11 @@
 
             <div class="mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
                 <h3 class="font-semibold text-sm text-slate-700 mb-3 flex items-center gap-1.5">
-                    <i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i> Thêm Serial Mới Vào Kho (Hỗ Trợ Quét Liên Tục)
+                    <i data-lucide="plus-circle" class="w-4 h-4 text-blue-600"></i> Thêm Serial Mới Vào Kho (Khớp Theo 10 Chữ Số)
                 </h3>
                 <div class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 items-center">
                     <div class="sm:col-span-4 flex gap-1.5">
-                        <input type="text" id="new-serial" placeholder="Mã Serial..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm uppercase font-mono bg-white">
+                        <input type="text" id="new-serial" placeholder="Quét QR hoặc nhập mã..." class="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm uppercase font-mono bg-white">
                         <button type="button" onclick="startScanner('stock')" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-1 shrink-0">
                             <i data-lucide="camera" class="w-4 h-4"></i> Quét
                         </button>
@@ -200,7 +200,7 @@
                         <button type="button" onclick="addSerialToStock()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 rounded-lg text-sm transition">Thêm Kho</button>
                     </div>
                 </div>
-                <p class="text-[11px] text-slate-500 mt-2">* Mẹo quét hàng loạt: Nhập trước <b>Tên sản phẩm</b> & chọn <b>Số tháng</b>, sau đó bấm <b>Quét</b> để bắn liên tục nhiều mã QR vào kho.</p>
+                <p class="text-[11px] text-slate-500 mt-2">* Tự động nhận diện theo <b>10 chữ số cuối</b> nếu mã QR có kèm chữ; nhập trước <b>Tên sản phẩm</b> & <b>Số tháng</b> để quét liên tục.</p>
             </div>
 
             <div id="reader-stock-container" class="hidden mb-6 border rounded-xl p-3 bg-slate-50 max-w-md mx-auto">
@@ -224,7 +224,7 @@
                 <table class="w-full text-left border-collapse text-xs sm:text-sm">
                     <thead>
                         <tr class="bg-slate-100 text-slate-600 text-[11px] uppercase">
-                            <th class="p-3 border-b">Serial</th>
+                            <th class="p-3 border-b">Serial (10 số)</th>
                             <th class="p-3 border-b">Sản phẩm</th>
                             <th class="p-3 border-b">Gói BH</th>
                             <th class="p-3 border-b">Trạng thái</th>
@@ -255,9 +255,31 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwmP5w8ZZ2A4uuHToe7pFKqA43QQqToVV7G0P6mFvVfs7Qmt9kVNCYlYUJh-83pSIKRhw/exec";
 
         const defaultSerials = [
-            { serial: "SLK-2026-001", product: "Đèn năng lượng mặt trời Solatek 100W", months: 24, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" },
-            { serial: "SLK-2026-002", product: "Inverter Solatek Hybrid 5kW", months: 36, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" }
+            { serial: "2026000001", product: "Đèn năng lượng mặt trời Solatek 100W", months: 24, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" },
+            { serial: "2026000002", product: "Inverter Solatek Hybrid 5kW", months: 36, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" }
         ];
+
+        function normalizeCode10(val) {
+            const digits = (val || '').toString().replace(/\D+/g, '');
+            if (digits.length >= 10) {
+                return digits.slice(-10);
+            }
+            return (val || '').toString().trim().toUpperCase().replace(/\s+/g, '');
+        }
+
+        function isSameCode(a, b) {
+            const rawA = (a || '').toString().trim().toUpperCase().replace(/\s+/g, '');
+            const rawB = (b || '').toString().trim().toUpperCase().replace(/\s+/g, '');
+            if (!rawA || !rawB) return false;
+            if (rawA === rawB) return true;
+
+            const dA = rawA.replace(/\D+/g, '');
+            const dB = rawB.replace(/\D+/g, '');
+            if (dA.length >= 10 && dB.length >= 10) {
+                return dA.slice(-10) === dB.slice(-10);
+            }
+            return false;
+        }
 
         function showToast(msg) {
             const toast = document.getElementById('toast');
@@ -289,7 +311,7 @@
                 const json = await res.json();
                 if (json && json.status === "success" && Array.isArray(json.items)) {
                     const normalized = json.items.map(item => ({
-                        serial: (item.serial || '').toString().trim().toUpperCase(),
+                        serial: normalizeCode10(item.serial),
                         product: (item.product || '').toString().trim(),
                         months: Number(item.months) || 24,
                         status: item.status || 'Chưa kích hoạt',
@@ -350,14 +372,15 @@
 
         async function handleActivate(e) {
             e.preventDefault();
-            const serial = document.getElementById('act-serial').value.trim().toUpperCase().replace(/\s+/g, '');
+            const rawSerial = document.getElementById('act-serial').value.trim().toUpperCase().replace(/\s+/g, '');
+            const serialKey = normalizeCode10(rawSerial);
             const name = document.getElementById('act-name').value.trim();
             const phone = document.getElementById('act-phone').value.trim();
             const address = document.getElementById('act-address').value.trim();
             const msgBox = document.getElementById('act-message');
 
             let serials = await loadFromSheet(false);
-            let found = serials.find(s => s.serial.trim().toUpperCase() === serial);
+            let found = serials.find(s => isSameCode(s.serial, serialKey));
 
             if (!found) {
                 msgBox.className = "mt-4 p-3 rounded-lg bg-red-50 text-center text-sm font-medium text-red-600 border border-red-200";
@@ -387,7 +410,7 @@
 
             saveSerials(serials);
             renderAdminTable();
-            await syncToSheet({ action: "activate", ...found });
+            await syncToSheet({ action: "activate", ...found, serial: found.serial });
 
             msgBox.className = "mt-4 p-3 rounded-lg bg-green-50 text-center text-sm font-medium text-green-700 border border-green-200";
             msgBox.innerHTML = `🎉 Kích hoạt bảo hành thành công (${totalMonths} tháng)!<br>Hạn bảo hành đến ngày: <b>${found.expiry}</b>`;
@@ -396,19 +419,20 @@
         }
 
         async function handleLookup() {
-            const serial = document.getElementById('lookup-serial').value.trim().toUpperCase().replace(/\s+/g, '');
+            const rawSerial = document.getElementById('lookup-serial').value.trim().toUpperCase().replace(/\s+/g, '');
+            const serialKey = normalizeCode10(rawSerial);
             const resBox = document.getElementById('lookup-result');
-            if (!serial) {
+            if (!serialKey) {
                 showToast("Vui lòng nhập hoặc quét mã máy!");
                 return;
             }
 
             let serials = await loadFromSheet(false);
-            let found = serials.find(s => s.serial.trim().toUpperCase() === serial);
+            let found = serials.find(s => isSameCode(s.serial, serialKey));
 
             resBox.classList.remove('hidden');
             if (!found) {
-                resBox.innerHTML = `<p class="text-red-600 font-medium text-center text-sm">Không tìm thấy mã máy: <span class="font-mono font-bold">${serial}</span></p>`;
+                resBox.innerHTML = `<p class="text-red-600 font-medium text-center text-sm">Không tìm thấy mã máy: <span class="font-mono font-bold">${serialKey}</span></p>`;
                 return;
             }
 
@@ -522,7 +546,7 @@
             }
 
             filtered.forEach((item) => {
-                let actualIndex = serials.findIndex(s => s.serial === item.serial);
+                let actualIndex = serials.findIndex(s => isSameCode(s.serial, item.serial));
                 let badgeClass = item.status === "Đã kích hoạt" ? "bg-green-100 text-green-700" : "bg-amber-100 text-amber-700";
                 let customerInfo = item.customer ? `<div class="font-medium text-slate-800">${item.customer}</div><div class="text-[11px] text-slate-500">${item.phone}</div>` : '---';
 
@@ -545,32 +569,33 @@
         }
 
         async function addSerialToStock(isAutoScan = false) {
-            const serial = document.getElementById('new-serial').value.trim().toUpperCase().replace(/\s+/g, '');
+            const rawSerial = document.getElementById('new-serial').value.trim().toUpperCase().replace(/\s+/g, '');
+            const serialKey = normalizeCode10(rawSerial);
             const product = document.getElementById('new-product').value.trim();
             const months = parseInt(document.getElementById('new-months').value) || 24;
 
-            if (!serial || !product) {
+            if (!serialKey || !product) {
                 if (!isAutoScan) alert("Vui lòng nhập đầy đủ Mã Serial và Tên sản phẩm!");
                 else showToast("⚠️ Nhập Tên sản phẩm trước khi quét hàng loạt!");
                 return;
             }
 
             let serials = getSerials();
-            const existing = serials.find(s => s.serial.trim().toUpperCase() === serial);
-            const itemToSync = existing || { serial, product, months, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" };
+            const existing = serials.find(s => isSameCode(s.serial, serialKey));
+            const itemToSync = existing || { serial: serialKey, product, months, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" };
 
             if (!existing) {
                 serials.unshift(itemToSync);
                 saveSerials(serials);
                 renderAdminTable();
             } else {
-                showToast(`ℹ️ Mã ${serial} đã có trong máy, vẫn đang đẩy lên Sheets...`);
+                showToast(`ℹ️ Mã ${serialKey} đã có trong máy, vẫn đang đẩy lên Sheets...`);
             }
 
             const synced = await syncToSheet({ action: "addStock", ...itemToSync });
             document.getElementById('new-serial').value = '';
             if (synced) {
-                showToast(`✅ Đã gửi mã ${serial} (${months} tháng) lên Sheets!`);
+                showToast(`✅ Đã lưu mã ${serialKey} (${months} tháng) lên Sheets!`);
             }
         }
 
@@ -601,7 +626,7 @@
                 { facingMode: "environment" }, 
                 config, 
                 (decodedText) => {
-                    let cleanText = decodedText.trim().toUpperCase().replace(/\s+/g, '');
+                    let cleanText = normalizeCode10(decodedText);
                     let now = Date.now();
 
                     if (cleanText === lastScannedCode && (now - lastScannedTime) < 1500) {
