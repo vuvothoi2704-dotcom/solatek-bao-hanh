@@ -277,16 +277,19 @@
         }
 
         async function syncToSheet(payload) {
-            if (!SCRIPT_URL) return;
+            if (!SCRIPT_URL) return false;
             try {
                 await fetch(SCRIPT_URL, {
                     method: "POST",
                     mode: "no-cors",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
                     body: JSON.stringify(payload)
                 });
+                return true;
             } catch (err) {
                 console.error("Lỗi đồng bộ Google Sheets:", err);
+                showToast("⚠️ Không gửi được dữ liệu lên Google Sheets!");
+                return false;
             }
         }
 
@@ -507,21 +510,22 @@
             }
 
             let serials = getSerials();
-            if (serials.some(s => s.serial.trim().toUpperCase() === serial)) {
-                if (!isAutoScan) alert("Mã Serial này đã tồn tại trong kho!");
-                else showToast(`⚠️ Mã ${serial} đã có trong kho!`);
-                document.getElementById('new-serial').value = '';
-                return;
+            const existing = serials.find(s => s.serial.trim().toUpperCase() === serial);
+            const itemToSync = existing || { serial, product, months, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" };
+
+            if (!existing) {
+                serials.unshift(itemToSync);
+                saveSerials(serials);
+                renderAdminTable();
+            } else {
+                showToast(`ℹ️ Mã ${serial} đã có trong máy, vẫn đang đẩy lên Sheets...`);
             }
 
-            const newItem = { serial, product, months, status: "Chưa kích hoạt", customer: "", phone: "", address: "", date: "", expiry: "" };
-            serials.unshift(newItem);
-            saveSerials(serials);
-            renderAdminTable();
-            await syncToSheet({ action: "addStock", ...newItem });
-
+            const synced = await syncToSheet({ action: "addStock", ...itemToSync });
             document.getElementById('new-serial').value = '';
-            showToast(`✅ Đã thêm mã ${serial} (${months} tháng) vào kho!`);
+            if (synced) {
+                showToast(`✅ Đã gửi mã ${serial} (${months} tháng) lên Sheets!`);
+            }
         }
 
         function deleteSerial(index) {
