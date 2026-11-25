@@ -93,10 +93,10 @@
         <!-- 2. GIAO DIỆN TRA CỨU BẢO HÀNH (KHÁCH HÀNG) -->
         <div id="view-lookup" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-8 max-w-xl mx-auto hidden">
             <h2 class="text-xl font-bold text-slate-800 mb-1.5 text-center">Tra Cứu Thông Tin Bảo Hành</h2>
-            <p class="text-sm text-slate-500 text-center mb-6">Nhập hoặc quét mã Serial sản phẩm để kiểm tra thời hạn bảo hành.</p>
+            <p class="text-sm text-slate-500 text-center mb-6">Nhập hoặc quét mã máy để kiểm tra hạn bảo hành sản phẩm.</p>
             
             <div class="flex gap-2 mb-4">
-                <input type="text" id="lookup-serial" placeholder="Nhập mã Serial..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none uppercase font-mono text-sm">
+                <input type="text" id="lookup-serial" placeholder="Nhập mã máy / Serial..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none uppercase font-mono text-sm">
                 <button type="button" onclick="startScanner('lookup')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2.5 rounded-lg border border-slate-300 flex items-center justify-center shrink-0" title="Quét QR">
                     <i data-lucide="camera" class="w-4 h-4"></i>
                 </button>
@@ -345,18 +345,11 @@
             document.getElementById('activate-form').reset();
         }
 
-        function maskName(fullName) {
-            if (!fullName) return '***';
-            let parts = fullName.trim().split(/\s+/);
-            if (parts.length === 1) return parts[0][0] + '***';
-            return parts[0] + ' *** ' + parts[parts.length - 1];
-        }
-
         function handleLookup() {
             const serial = document.getElementById('lookup-serial').value.trim().toUpperCase().replace(/\s+/g, '');
             const resBox = document.getElementById('lookup-result');
             if (!serial) {
-                showToast("Vui lòng nhập hoặc quét mã Serial!");
+                showToast("Vui lòng nhập hoặc quét mã máy!");
                 return;
             }
 
@@ -365,33 +358,29 @@
 
             resBox.classList.remove('hidden');
             if (!found) {
-                resBox.innerHTML = `<p class="text-red-600 font-medium text-center text-sm">Không tìm thấy mã Serial: <span class="font-mono font-bold">${serial}</span></p>`;
+                resBox.innerHTML = `<p class="text-red-600 font-medium text-center text-sm">Không tìm thấy mã máy: <span class="font-mono font-bold">${serial}</span></p>`;
                 return;
             }
 
             if (found.status === "Chưa kích hoạt") {
                 resBox.innerHTML = `
-                    <div class="space-y-2 text-sm">
-                        <p><strong>Sản phẩm:</strong> ${found.product}</p>
-                        <p><strong>Serial:</strong> <span class="font-mono text-blue-600 font-semibold">${found.serial}</span></p>
-                        <p><strong>Thời hạn bảo hành:</strong> ${found.months || 24} tháng</p>
-                        <p class="text-amber-600 font-semibold">Trạng thái: Chưa được kích hoạt bảo hành.</p>
+                    <div class="space-y-2 text-sm text-center">
+                        <p><strong>Mã máy:</strong> <span class="font-mono text-blue-600 font-semibold">${found.serial}</span></p>
+                        <p class="text-amber-600 font-semibold">Trạng thái: Chưa kích hoạt bảo hành</p>
                         <button onclick="switchTab('activate'); document.getElementById('act-serial').value='${found.serial}';" class="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-xs font-semibold transition">Kích hoạt bảo hành ngay</button>
                     </div>`;
             } else {
-                let phoneStr = String(found.phone || '');
-                let maskedPhone = phoneStr.length > 5 ? phoneStr.slice(0, 3) + '****' + phoneStr.slice(-2) : '****';
-                let maskedCustomer = maskName(found.customer);
-                
                 resBox.innerHTML = `
-                    <div class="space-y-2 text-sm">
-                        <p class="text-green-600 font-bold flex items-center gap-1">✔ Sản phẩm chính hãng đã kích hoạt</p>
-                        <p><strong>Sản phẩm:</strong> ${found.product}</p>
-                        <p><strong>Serial:</strong> <span class="font-mono text-blue-600 font-semibold">${found.serial}</span></p>
-                        <p><strong>Khách hàng:</strong> ${maskedCustomer}</p>
-                        <p><strong>Điện thoại:</strong> <span class="font-mono font-semibold text-slate-700">${maskedPhone}</span></p>
-                        <p><strong>Ngày kích hoạt:</strong> ${found.date}</p>
-                        <p><strong>Hạn bảo hành:</strong> <span class="text-blue-600 font-bold">${found.expiry}</span> (${found.months || 24} tháng)</p>
+                    <div class="space-y-2.5 text-sm">
+                        <p class="text-green-600 font-bold text-center">✔ Sản phẩm chính hãng đã kích hoạt</p>
+                        <div class="flex justify-between items-center py-1.5 border-b border-slate-200">
+                            <span class="text-slate-600">Mã máy:</span>
+                            <span class="font-mono font-bold text-blue-600">${found.serial}</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1.5">
+                            <span class="text-slate-600">Hạn bảo hành:</span>
+                            <span class="font-bold text-slate-900">${found.expiry}</span>
+                        </div>
                     </div>`;
             }
         }
@@ -455,7 +444,6 @@
             let searchText = document.getElementById('admin-search').value.toLowerCase();
             tbody.innerHTML = '';
 
-            // Cập nhật thống kê
             document.getElementById('stat-total').innerText = serials.length;
             document.getElementById('stat-active').innerText = serials.filter(s => s.status === 'Đã kích hoạt').length;
             document.getElementById('stat-pending').innerText = serials.filter(s => s.status === 'Chưa kích hoạt').length;
@@ -554,7 +542,6 @@
                     let cleanText = decodedText.trim().toUpperCase().replace(/\s+/g, '');
                     let now = Date.now();
 
-                    // Chống quét đè trùng lặp trong 1.5 giây
                     if (cleanText === lastScannedCode && (now - lastScannedTime) < 1500) {
                         return;
                     }
